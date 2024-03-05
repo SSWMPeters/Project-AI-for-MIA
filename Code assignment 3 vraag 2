@@ -1,0 +1,102 @@
+import os
+import numpy as np
+import matplotlib.pyplot as plt
+
+from tensorflow.keras.preprocessing.image import ImageDataGenerator
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Conv2D, MaxPooling2D, Flatten, Dense
+from tensorflow.keras.optimizers import SGD
+from tensorflow.keras.callbacks import ModelCheckpoint
+
+# the size of the images in the PCAM dataset
+IMAGE_SIZE = 96
+
+def get_pcam_generators(base_dir, train_batch_size=32, val_batch_size=32):
+    # dataset parameters
+    TRAIN_PATH = os.path.join(base_dir, 'train+val', 'train')
+    VALID_PATH = os.path.join(base_dir, 'train+val', 'valid')
+    RESCALING_FACTOR = 1./255
+
+    # instantiate data generators
+    datagen = ImageDataGenerator(rescale=RESCALING_FACTOR)
+
+    train_gen = datagen.flow_from_directory(TRAIN_PATH,
+                                            target_size=(IMAGE_SIZE, IMAGE_SIZE),
+                                            batch_size=train_batch_size,
+                                            class_mode='binary')
+
+    val_gen = datagen.flow_from_directory(VALID_PATH,
+                                          target_size=(IMAGE_SIZE, IMAGE_SIZE),
+                                          batch_size=val_batch_size,
+                                          class_mode='binary',
+                                          shuffle=False)
+
+    return train_gen, val_gen
+
+def get_fcn_model(first_filters=32, second_filters=64, kernel_size=(3,3), pool_size=(2,2)):
+    # build the model
+    model = Sequential()
+
+    model.add(Conv2D(first_filters, kernel_size, activation='relu', padding='same', input_shape=(IMAGE_SIZE, IMAGE_SIZE, 3)))
+    model.add(MaxPooling2D(pool_size=pool_size))
+
+    model.add(Conv2D(second_filters, kernel_size, activation='relu', padding='same'))
+    model.add(MaxPooling2D(pool_size=pool_size))
+
+    model.add(Flatten())
+    
+    # compile the model
+    model.compile(SGD(learning_rate=0.01, momentum=0.95), loss='binary_crossentropy', metrics=['accuracy'])
+
+    return model
+
+
+def train_model(model, train_gen, val_gen, epochs=3):
+    # Define file path for saving weights
+    weights_filepath = "fcn_model_weights.hdf5"
+
+    # Define the model checkpoint callback
+    checkpoint = ModelCheckpoint(weights_filepath,
+                                 monitor='val_loss',
+                                 verbose=1,
+                                 save_best_only=True,
+                                 mode='min')
+
+    # Compile the model with binary cross-entropy loss
+    model.compile(SGD(learning_rate=0.01, momentum=0.95), loss='binary_crossentropy', metrics=['accuracy'])
+
+    # Train the model with the checkpoint callback
+    history = model.fit(train_gen,
+                        steps_per_epoch=train_gen.samples // train_gen.batch_size,
+                        epochs=epochs,
+                        validation_data=val_gen,
+                        validation_steps=val_gen.samples // val_gen.batch_size,
+                        callbacks=[checkpoint])
+
+    return history
+
+def start_training(epochs=3):
+    base_dir = r"C:\Users\20203894\Documents\8p361"  # Define base directory here
+
+    # Get data generators
+    train_gen, val_gen = get_pcam_generators(base_dir)
+
+    # Get the model
+    model = get_fcn_model()
+
+    for layer in model.layers:
+        print(layer.output_shape)
+
+    # Train the model
+    history = train_model(model, train_gen, val_gen, epochs=epochs)
+
+    # Plot training history
+    plt.plot(history.history['accuracy'], label='accuracy')
+    plt.plot(history.history['val_accuracy'], label='val_accuracy')
+    plt.xlabel('Epoch')
+    plt.ylabel('Accuracy')
+    plt.legend()
+    plt.show()
+
+# Example usage
+start_training()
