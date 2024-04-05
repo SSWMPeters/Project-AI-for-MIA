@@ -6,7 +6,7 @@ This Python script contains functions for constructing, training, and evaluating
 
 - `VAE_code_function.py`: Contains functions related to VAE model construction, training, and image generation.
 - `CNN_code_function.py`: Contains functions related to CNN model construction, training, and evaluation.
-- `your_script_name.py`: Main script combining both VAE and CNN functionalities.
+- `code_calls.ipynb`: Main script combining both VAE and CNN functionalities.
 
 ## Usage
 
