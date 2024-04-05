@@ -1,3 +1,8 @@
+# Based on code from Assignment 3 8P361
+# TU/e BME Project Imaging 2021
+# Convolutional neural network for PCAM
+# Code by Suzanne Wetstein
+
 import os
 import numpy as np
 import matplotlib.pyplot as plt
@@ -179,50 +184,3 @@ def plot_roc_curve(fpr, tpr, roc_auc, type='dense'):
     plt.title("ROC Curve of model with fully {} layers".format(name_type))
     plt.legend(loc="lower right")
     plt.show()
-
-
-
-def calculate_and_plot_ROC_AUC(base_dir, type='dense', model_name='my_model'):
-    """
-    Combine different functions to create and train the model, and to calculate and plot the ROC curve and AUC value.
-
-    Args:
-        type (str): Type of model to use ('dense' or 'conv'). Default is 'dense'.
-        model_name (str): Name of the model.
-
-    """
-    # Get the model
-    if type == 'dense':
-        model = get_model()
-    elif type == 'conv':
-        model = get_fcn_model()
-
-    print('Summary of model:')
-    for layer in model.layers:
-        print(layer.output_shape)
-
-    print('test')
-    # Get the data generators
-    train_gen, val_gen, TRAIN_PATH = get_pcam_generators_2(base_dir, split=0.1)
-    print(TRAIN_PATH)
-    
-    model_filepath = model_name + '.json'
-    weights_filepath = model_name + '_weights.hdf5'
-
-    # Train the model
-    train_model(model, train_gen, val_gen, weights_filepath, model_filepath, epochs=3)
-
-    # Load the trained model weights
-    model.load_weights(weights_filepath)
-
-    # Evaluate the model
-    score = model.evaluate(val_gen)
-    print("Loss:", score[0])
-    print("Accuracy:", score[1])
-    
-    # Calculate ROC and AUC
-    fpr, tpr, roc_auc = calculate_roc_and_auc(model, val_gen)
-    print("AUC:", roc_auc)
-    
-    # Plot ROC curve
-    plot_roc_curve(fpr, tpr, roc_auc, type)

@@ -1,3 +1,7 @@
+# Based on code by Derrick MWiti Implementation of Variational Autoencoder in Keras
+# Retrieved from: https://www.kaggle.com/code/derrickmwiti/variational-autoencoder-in-keras
+
+
 from keras.models import Model
 from keras import backend as K
 from keras import metrics
